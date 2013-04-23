@@ -4,6 +4,7 @@ var assert = require('assert')
   , ase = assert.strictEqual
   , ade = assert.deepEqual
   , BitArray = require('./lib/bitarray')
+  , Bitmap = require('./lib/bitmap')
   , utils = require('./lib/utils')
   , redis = require('redis')
   , now = new Date()
@@ -25,8 +26,7 @@ describe('Redis BitMap', function() {
   }
 
   describe('BitMap', function() {
-    var Bitmap = require('./lib/bitmap')
-      , db = redis.createClient()
+    var db = redis.createClient(6379, '127.0.0.1', {detect_buffers: true})
       , bm = new Bitmap(db)
 
     it('should set some bits', function(done) {
@@ -98,6 +98,14 @@ describe('Redis BitMap', function() {
       })
     })
 
+    it('should get multiple bitsets', function(done) {
+      bm.get('bitmap:simple', 'bitmap:multi', function(err, resp) {
+        ase(err, null)
+        ase(resp.length, 2)
+        done()
+      })
+    })
+
     it('should get multi key cardinality', function(done) {
       bm.count('bitmap:simple', 'bitmap:multi', function(err, count) {
         ase(err, null)
@@ -132,7 +140,7 @@ describe('Redis BitMap', function() {
         ase(err, null)
         ase(bits[0], 1)
         ase(bits[3], 1)
-        ase(bin, '10010000000000000000000000000000000000000000000000000000')
+        ase(bin, '00000000000000000000000000000000000000000000000000001001')
         done()
       })
     })
@@ -143,8 +151,79 @@ describe('Redis BitMap', function() {
           , bin = resp.toString()
 
         ase(err, null)
-        ase(bin, '00000111101000000000101000000000000000000000000000100000')
+        ase(bin, '00000100000000000000000000000000010100000000010111100000')
         done()
+      })
+    })
+
+    it('should cleanup the keys', function(done) {
+      clean(db, 'bitmap*', done)
+    })
+
+    it('should disconnect from redis', function(done) {
+      db.on('end', done)
+      db.quit()
+    })
+  })
+
+  describe('Aggregation', function() {
+    var db = redis.createClient(6379, '127.0.0.1', {detect_buffers: true})
+      , bm = new Bitmap(db)
+
+    it('should return a multi', function(done) {
+      var multi = bm
+        .aggregate('bitmap:tmp', 'get')
+        .set('bitmap:one', 0, 1)
+        .set('bitmap:two', 1, 1)
+        .set('bitmap:two', 2, 1)
+        .union('bitmap:one', 'bitmap:two')
+        .set('bitmap:three', 1, 1)
+        .set('bitmap:three', 2, 1)
+        .xor('bitmap:three')
+        .clean()
+        .exec(function(err, resp) {
+          ase(err, null)
+          ase(resp.toString(), '00000001')
+
+          db.get('bitmap:tmp', function(err, resp) {
+            ase(err, null)
+            ase(resp, null)
+            done()
+          })
+        })
+    })
+
+    it('should return a multi', function(done) {
+      var multi = bm
+        .aggregate('bitmap:cardinality')
+        .set('bitmap:one', 0, 1)
+        .set('bitmap:two', 1, 1)
+        .set('bitmap:two', 2, 1)
+        .union('bitmap:one', 'bitmap:two')
+        .set('bitmap:three', 1, 1)
+        .set('bitmap:three', 2, 1)
+        .count()
+        .exec(function(err, resp) {
+          ase(err, null)
+          ase(resp, 3)
+
+          bm.count('bitmap:cardinality', function(err, resp) {
+            ase(err, null)
+            ase(resp, 3)
+            done()
+          })
+        })
+    })
+
+    it('should still work as a non-buffered client', function(done) {
+      db.set('bitmap:string', 'string', function(err, resp) {
+        ase(err, null)
+        ase(resp, 'OK')
+        db.get('bitmap:string', function(err, resp) {
+          ase(err, null)
+          ase(resp, 'string')
+          done()
+        })
       })
     })
 
@@ -167,7 +246,7 @@ describe('Redis BitMap', function() {
 
     it('should get the correct bits', function() {
       var bit = new BitArray([128, 144])
-      ase(bit.toString(), '1000000010010000')
+      ase(bit.toString(), '0000100100000001')
       ase(bit.cardinality(), 3)
       ade(bit.toJSON(), [1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0])
     })
