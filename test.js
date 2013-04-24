@@ -20,10 +20,17 @@ describe('Redis BitMap', function() {
         ase(err, null)
         done()
       }
+      if (!args.length) {
+        return done(null)
+      }
       args.push(callback)
       db.del.apply(db, args)
     })
   }
+
+  before(function(done) {
+    clean(redis.createClient(), 'bitmap:*', done)
+  })
 
   describe('BitMap', function() {
     var db = redis.createClient(6379, '127.0.0.1', {return_buffers: true})
