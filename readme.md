@@ -4,6 +4,9 @@ Redis Bitmap
 
 [![Build Status](https://secure.travis-ci.org/sorensen/redis-bitmap.png)](http://travis-ci.org/sorensen/redis-bitmap)
 
+Utility library for working with redis bit operations. Provides ability for chaining 
+multiple bit operations together through redis and makes dealing with buffered 
+responses easier.
 
 Usage
 -----
@@ -19,12 +22,8 @@ var BitMap = require('redis-bitmap')
 Buffering redis
 ---------------
 
-**NOTE:** In order to use redis bitops correctly, the redis instance must either have the 
-`detect_buffers` option set, or `return_buffers` set. If neither one is enabled, 
-this lib will turn the `detect_buffers` option on, which may cause unexpected 
-results. If you use the `aggregation` features, this lib will attempt to turn the 
-`return_buffers` option on during an `exec` call, and then return the options to 
-the previous state.
+**NOTE:** In order to use redis bitops correctly, the redis instance must have the 
+`return_buffers` option set.
 
 
 Example
@@ -33,8 +32,8 @@ Example
 Population count:
 
 ```js
-bmap.set('foo', 0, 1)
-bmap.set('foo', 3, 1)
+bmap.setbit('foo', 0, 1)
+bmap.setbit('foo', 3, 1)
 bmap.population('foo', function(err, count) {
   count === 2
 })
@@ -46,10 +45,31 @@ buffered response redis returns into something usable.
 
 ```js
 bmap.get('foo', function(err, bitarray) {
-  var bits = bitarray.toJSON() // [1,0,0,1,0,0,0,0]
-  var binary = bitarray.toString() // '00001001'
+  var bits = bitarray.toJSON()       // [1,0,0,1,0,0,0,0]
+  var binary = bitarray.toString()   // '00001001'
   var count = bitarray.cardinality() // 2
 })
+```
+
+Lets try it with some of the other commands, the `redis.print` command will 
+end up calling `toString()` on each BitArray instance returned.
+
+```js
+bmap.setbit('one', 0, 1, redis.print) // 1
+bmap.setbit('one', 2, 1, redis.print) // 1
+bmap.setbit('one', 4, 1, redis.print) // 1
+
+bmap.setbit('two', 1, 1, redis.print) // 1
+bmap.setbit('two', 2, 1, redis.print) // 1
+bmap.setbit('two', 7, 1, redis.print) // 1
+
+bmap.get('one', redis.print)          // 00010101
+bmap.get('two', redis.print)          // 10000110
+bmap.xor('one', 'two', redis.print)   // 10010011
+bmap.or('one', 'two', redis.print)    // 10010111
+bmap.and('one', 'two', redis.print)   // 00000100
+bmap.not('one', redis.print)          // 11101010
+bmap.not('two', redis.print)          // 01111001
 ```
 
 Methods
@@ -66,11 +86,23 @@ Pass-through to the redis [SETBIT](http://redis.io/commands/bitop) command.
 
 **Alias**: [`set`]
 
+```js
+bmap.setbit('test', 2, 1, function(err, previous) {
+  previous === 0 // true
+})
+```
+
 
 ### instance.get(key, [key2], […], callback)
 
 * `key` - redis key(s)
 * `callback` - standard callback, called with `BitArray` instances
+
+```js
+bmap.get('test', function(err, bitmap) {
+  bitmap.toJSON() // [0,0,1,0,0,0,0,0]
+})
+```
 
 
 ### instance.bitop(op, destination, key, [key2], […], [callback])
@@ -84,11 +116,19 @@ an `Aggregate` instance is returned that can be used for chaining commands. See 
 * `key` - redis key(s)
 * `callback` - standard callback (optional)
 
+```js
+bmap.setbit('foo', 0, 1)
+bmap.setbit('foo', 7, 1)
+bmap.bitop('xor', 'foo:xor', function(err, len) {
+  len === 1 // Length of destination
+})
+```
 
-### instance.tempBitop(op, cmd, key, [key2], […], [callback])
+
+### instance.tmpBitop(redisCmd, bitop, key, [key2], […], [callback])
 
 Perform a bitop command and store the results in a temporary key supplied to 
-the `BitMap` constructor, default `"tmp"`, which will be retrieved afterwards 
+the `BitMap` constructor, default `"bitmap:tmp"`, which will be retrieved afterwards 
 and then deleted. A command is supplied to designate if a `GET` should be used 
 to get the bits, or a `BITCOUNT` for population / cardinality.
 
@@ -96,6 +136,12 @@ to get the bits, or a `BITCOUNT` for population / cardinality.
 * `command` - redis command to use once operation complete (`get`, `bitcount`)
 * `key` - redis key(s)
 * `callback` - standard callback (optional)
+
+```js
+bmap.tmpBitop('get', 'or', 'foo', 'test', function(err, bitmap) {
+  bitmap.toJSON() // [1,0,1,0,0,0,0,1]
+})
+```
 
 
 ### instance.xor(key, [key2], […], [callback])
@@ -122,6 +168,14 @@ to get the bits, or a `BITCOUNT` for population / cardinality.
 **Alias**: [`intersect`]
 
 
+### instance.not(key, [callback])
+
+* `key` - redis key
+* `callback` - standard callback (optional)
+
+**Alias**: [`reverse`]
+
+
 ### instance.bitcount(key, [key2], […], [callback])
 
 * `key` - redis key(s)
@@ -135,7 +189,7 @@ to get the bits, or a `BITCOUNT` for population / cardinality.
 Create an `Aggregate` instance for chaining commands together, uses the `destination` 
 key to store all `bitop` results.
 
-* `destination` - destination key for results (optional, default `"tmp"`)
+* `destination` - destination key for results (optional, default `"bitmap:tmp"`)
 
 
 Aggregation
