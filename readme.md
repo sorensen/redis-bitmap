@@ -39,9 +39,9 @@ bmap.population('foo', function(err, count) {
 })
 ```
 
-Loading keys with this lib will return a `BitArray` instance to provide a little 
-extra functionality when dealing with bits, the main purpose is to convert the 
-buffered response redis returns into something usable.
+Loading keys with this lib will return a [BitArray](https://github.com/sorensen/node-bitarray) 
+instance to provide a little extra functionality when dealing with bits, the 
+main purpose is to convert the buffered response redis returns into something usable.
 
 ```js
 bmap.get('foo', function(err, bitarray) {
@@ -55,21 +55,21 @@ Lets try it with some of the other commands, the `redis.print` command will
 end up calling `toString()` on each BitArray instance returned.
 
 ```js
-bmap.setbit('one', 0, 1, redis.print) // 1
-bmap.setbit('one', 2, 1, redis.print) // 1
-bmap.setbit('one', 4, 1, redis.print) // 1
+bmap.setbit('meow', 0, 1, redis.print) // 1
+bmap.setbit('meow', 2, 1, redis.print) // 1
+bmap.setbit('meow', 4, 1, redis.print) // 1
 
-bmap.setbit('two', 1, 1, redis.print) // 1
-bmap.setbit('two', 2, 1, redis.print) // 1
-bmap.setbit('two', 7, 1, redis.print) // 1
+bmap.setbit('bark', 1, 1, redis.print) // 1
+bmap.setbit('bark', 2, 1, redis.print) // 1
+bmap.setbit('bark', 7, 1, redis.print) // 1
 
-bmap.get('one', redis.print)          // 00010101
-bmap.get('two', redis.print)          // 10000110
-bmap.xor('one', 'two', redis.print)   // 10010011
-bmap.or('one', 'two', redis.print)    // 10010111
-bmap.and('one', 'two', redis.print)   // 00000100
-bmap.not('one', redis.print)          // 11101010
-bmap.not('two', redis.print)          // 01111001
+bmap.get('meow', redis.print)          // 00010101
+bmap.get('bark', redis.print)          // 10000110
+bmap.xor('meow', 'bark', redis.print)  // 10010011
+bmap.or('meow', 'bark', redis.print)   // 10010111
+bmap.and('meow', 'bark', redis.print)  // 00000100
+bmap.not('meow', redis.print)          // 11101010
+bmap.not('bark', redis.print)          // 01111001
 ```
 
 Methods
@@ -201,10 +201,10 @@ of previous commands, you can use the `aggregate` command to start a redis multi
 ```js
 bmap
   .aggregate('tmp')           // Set the destination key
-  .setbit('one', 0, 1)        // Set a bit
-  .setbit('two', 1, 1)        // Set a bit
-  .setbit('two', 2, 1)        // Set a bit
-  .or('one', 'two')           // Perform a union of `one` and `two` into `tmp`
+  .setbit('meow', 0, 1)        // Set a bit
+  .setbit('bark', 1, 1)        // Set a bit
+  .setbit('bark', 2, 1)        // Set a bit
+  .or('meow', 'bark')           // Perform a union of `one` and `two` into `tmp`
   .setbit('three', 1, 1)      // Set new bits
   .setbit('three', 2, 1)      // Set another
   .xor('three')               // Find the difference of the previous union with `three`
@@ -216,80 +216,6 @@ bmap
     resp.toString             // '00000001'
   })
 ```
-
-
-BitArray
---------
-
-This library uses a custom `BitArray` library to wrap and convert all buffered responses returned 
-by redis. It is meant to make working with the bit results easier and save you from doing the conversions. Most of the methods are not required for use with `BitMap` but are meant as a companion 
-for doing the same type of operations in memory instead of through redis.
-
-### BitArray.cast(32bit, [asOctet])
-
-Convert a 32bit integer into a bit array
-
-* `32bit` - 32 bit integer
-* `asOctet` - ensure resulting array length is a multiple of 8
-
-
-### BitArray.octet(array)
-
-Zero fill an array until it represents an octet
-
-* `array` - bit array
-
-
-### BitArray.castFromBuffer(buffer)
-
-
-
-### BitArray.buffermatrix(buffer1, [buffer2], [...])
-
-
-
-### BitArray.and(array1, [array2], [...])
-
-**Alias**: [`intersect`]
-
-
-### BitArray.or(array1, [array2], [...])
-
-**Alias**: [`union`]
-
-
-### BitArray.xor(array1, [array2], [...])
-
-**Alias**: [`difference`]
-
-
-### BitArray.cardinality(32bit)
-
-
-
-### BitArray.cardinalityFromBuffer(buffer)
-
-
-
-### BitArray.cardinalityFromArray(array)
-
-
-
-### instance.toString()
-
-
-
-### instance.toJSON()
-
-
-
-### instance.set(index, value)
-
-
-
-### instance.cardinality()
-
-
 
 
 Install

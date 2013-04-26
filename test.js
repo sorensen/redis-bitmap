@@ -3,9 +3,7 @@
 var assert = require('assert')
   , ase = assert.strictEqual
   , ade = assert.deepEqual
-  , BitArray = require('./lib/bitarray')
-  , Bitmap = require('./lib/bitmap')
-  , utils = require('./lib/utils')
+  , Bitmap = require('./index')
   , redis = require('redis')
   , now = new Date()
 
@@ -95,6 +93,7 @@ describe('Redis BitMap', function() {
     it('should have the correct bits', function(done) {
       bm.get('bitmap:multi', function(err, resp) {
         var bits = resp.toJSON()
+        
         ase(err, null)
         ase(bits[0], 1)
         ase(bits[3], 1)
@@ -172,6 +171,31 @@ describe('Redis BitMap', function() {
         ase(err, null)
         ade(resp.toJSON(), [ 1, 0, 0, 1, 1, 1, 1, 0 ])
         callback(err)
+      })
+    })
+
+    it('should xor on multiple keys', function(done) {
+      var one = 'bitmap:1'
+        , two = 'bitmap:2'
+        , three = 'bitmap:3'
+
+      bm.set(one, 0, 1)
+      bm.set(one, 3, 1)
+      bm.set(one, 7, 1)
+
+      bm.set(two, 0, 1)
+      bm.set(two, 4, 1)
+      bm.set(two, 7, 1)
+
+      bm.set(three, 1, 1)
+      bm.set(three, 5, 1)
+      bm.set(three, 7, 1)
+
+      bm.xor(one, two, three, function(err, resp) {
+        ase(err, null)
+        ase(resp instanceof Bitmap.BitArray, true)
+        ade(resp.toJSON(), [ 0, 1, 0, 1, 1, 1, 0, 1 ])
+        done()
       })
     })
 
@@ -336,36 +360,6 @@ describe('Redis BitMap', function() {
     it('should disconnect from redis', function(done) {
       db.on('end', done)
       db.quit()
-    })
-  })
-
-  describe('BitArray', function() {
-
-    it('should get the correct cardinality', function() {
-      ase(BitArray.cardinality(144), 2)
-      ase(BitArray.cardinality(128), 1)
-    })
-
-    it('should get the correct bits', function() {
-      var bit = new BitArray([128, 144])
-      ase(bit.toString(), '0000100100000001')
-      ase(bit.cardinality(), 3)
-      ade(bit.toJSON(), [1,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0])
-    })
-
-    it('should union multiple bit arrays', function() {
-      var bits = BitArray.union([1,0,0], [0,1,0], [0,0,1])
-      ade(bits, [1,1,1])
-    })
-
-    it('should intersect multiple bit arrays', function() {
-      var bits = BitArray.intersect([1,0,0], [1,1,0], [1,0,1])
-      ade(bits, [1,0,0])
-    })
-
-    it('should diff two bit arrays', function() {
-      var bits = BitArray.difference([1,0,0], [1,1,1])
-      ade(bits, [0,1,1])
     })
   })
 })
