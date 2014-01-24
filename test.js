@@ -11,6 +11,9 @@ describe('Redis BitMap', function() {
 
   function clean(db, pattern, done) {
     db.keys(pattern, function(err, resp) {
+      if (!resp || resp.length) {
+        return done()
+      }
       var args = resp.map(function(x) {
         return x.toString()
       })

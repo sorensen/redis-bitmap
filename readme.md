@@ -1,12 +1,13 @@
-
 Redis Bitmap
 ============
 
-[![Build Status](https://secure.travis-ci.org/sorensen/redis-bitmap.png)](http://travis-ci.org/sorensen/redis-bitmap)
+    Utility library for working with redis bit operations. Provides ability for chaining 
+    multiple bit operations together through redis and makes dealing with buffered 
+    responses easier.
 
-Utility library for working with redis bit operations. Provides ability for chaining 
-multiple bit operations together through redis and makes dealing with buffered 
-responses easier.
+[![Build Status](https://secure.travis-ci.org/sorensen/redis-bitmap.png)](http://travis-ci.org/sorensen/redis-bitmap)
+[![devDependency Status](https://david-dm.org/sorensen/redis-bitmap.png)](https://david-dm.org/sorensen/redis-bitmap#info=dependencies)
+[![NPM version](https://badge.fury.io/js/redis-bitmap.png)](http://badge.fury.io/js/redis-bitmap)
 
 Usage
 -----
@@ -233,7 +234,7 @@ License
 
 (The MIT License)
 
-Copyright (c) 2013 Beau Sorensen <mail@beausorensen.com>
+Copyright (c) 2013-2014 Beau Sorensen <mail@beausorensen.com>
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
