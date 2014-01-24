@@ -66,7 +66,7 @@ Bitmap.prototype.__proto__ = EventEmitter.prototype
  * Current library version, should match `package.json`
  */
 
-BitArray.VERSION = '0.0.1'
+Bitmap.VERSION = '0.0.1'
 
 /*!
  * Set a reference to `BitArray` for exports.
@@ -159,7 +159,7 @@ Bitmap.prototype.bitop = function(op, dest) {
     var aggr = this.aggregate(dest)
     return aggr.bitop.apply(aggr, arguments)
   }
-  next && args.push(callback)
+  next && args.push(next)
   // Check for multi command aggregation
   if (this._isAggr && this._isRunning && this.dest) {
     args.push(this.dest)
