@@ -2,7 +2,7 @@
   "author": "Beau Sorensen <mail@beausorensen.com> (http://github.com/sorensen)"
 , "name": "redis-bitmap"
 , "description": "Redis bitmap helper"
-, "version": "0.0.1"
+, "version": "0.0.2"
 , "license": "MIT"
 , "repository": {
     "type": "git"
@@ -17,7 +17,7 @@
   }
 , "dependencies": {
     "redis": "0.8.3"
-  , "node-bitarray": "0.0.1"
+  , "node-bitarray": "0.0.2"
   }
 , "devDependencies": {
     "mocha": "1.9.0"

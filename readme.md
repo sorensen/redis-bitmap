@@ -201,19 +201,19 @@ of previous commands, you can use the `aggregate` command to start a redis multi
 ```js
 bmap
   .aggregate('tmp')           // Set the destination key
-  .setbit('meow', 0, 1)        // Set a bit
-  .setbit('bark', 1, 1)        // Set a bit
-  .setbit('bark', 2, 1)        // Set a bit
-  .or('meow', 'bark')           // Perform a union of `one` and `two` into `tmp`
+  .setbit('meow', 0, 1)       // Set a bit
+  .setbit('bark', 1, 1)       // Set a bit
+  .setbit('bark', 2, 1)       // Set a bit
+  .or('meow', 'bark')         // Perform a union of `one` and `two` into `tmp`
   .setbit('three', 1, 1)      // Set new bits
   .setbit('three', 2, 1)      // Set another
   .xor('three')               // Find the difference of the previous union with `three`
   .clean()                    // Remove `tmp` key after execution
-  .exec(function(err, resp) { // Execute the current command queue  
-    resp instance of BitArray // true
-    resp.toJSON()             // [1,0,0,0,0,0,0,0]
-    resp.cardinality()        // 1
-    resp.toString             // '00000001'
+  .exec(function(err, bits) { // Execute the current command queue  
+    bits instance of BitArray // true
+    bits.toJSON()             // [1,0,0,0,0,0,0,0]
+    bits.cardinality()        // 1
+    bits.toString             // '00000001'
   })
 ```
 
