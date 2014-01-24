@@ -66,7 +66,7 @@ Bitmap.prototype.__proto__ = EventEmitter.prototype
  * Current library version, should match `package.json`
  */
 
-Bitmap.VERSION = '0.0.1'
+Bitmap.VERSION = '0.0.3'
 
 /*!
  * Set a reference to `BitArray` for exports.
